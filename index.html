@@ -460,7 +460,10 @@
 
     try {
       bleDevice = await navigator.bluetooth.requestDevice({
-        filters: [{ name: DEVICE_NAME }],
+        filters: [
+          { name: 'PogoPlusHub' },
+          { name: 'Pokemon GO Plus' }
+        ],
         optionalServices: [SERVICE_UUID]
       });
 
