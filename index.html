@@ -520,7 +520,12 @@
     const t = (s.t || '').toLowerCase();
     if      (t.includes('connect'))    { dot.classList.add('connected');   }
     else if (t.includes('handshak'))   { dot.classList.add('handshaking'); }
-    label.textContent = s.t || 'Unknown';
+    
+    let statusText = s.t || 'Unknown';
+    if (s.pc !== undefined && s.pc > 0) {
+      statusText = `${s.pc}/2 PGO Active`;
+    }
+    label.textContent = statusText;
 
     // Toggles (prevent triggering onchange)
     setCheck('toggle-catch', s.a === 1);
