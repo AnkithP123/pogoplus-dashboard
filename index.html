@@ -691,15 +691,34 @@
       reader.readAsArrayBuffer(file);
     }
 
+    async function checkCloudStatus() {
+      try {
+        const res = await fetch(`${PRIMARY_BACKEND}/api/firmware/latest`);
+        if (res.ok) {
+          const data = await res.json();
+          document.getElementById('backend-status-text').textContent = `Cloud Sync Active (v${data.version || '2.1.0'})`;
+          if (data.app_bin) {
+            document.getElementById('fw-size').textContent = `${data.app_bin.size.toLocaleString()} bytes (~${(data.app_bin.size / 1024).toFixed(0)} KB)`;
+            document.getElementById('fw-hash').textContent = data.app_bin.sha256;
+          }
+          log(`Cloud backend verified: Release v${data.version || '2.1.0'} on Northflank`, 'success');
+        } else {
+          throw new Error(`HTTP ${res.status}`);
+        }
+      } catch (e) {
+        document.getElementById('backend-status-text').textContent = "Cloud Sync Offline (Local Mode)";
+        log(`Cloud backend status check: ${e.message}. Static fallback available.`, 'info');
+      }
+    }
+
     async function loadCloudFirmware() {
       try {
-        log("Checking cloud backend for latest verified firmware...", 'info');
-        // Try Northflank API first
+        log("Fetching firmware payload from cloud backend...", 'info');
         let res = null;
         try {
           res = await fetch(`${PRIMARY_BACKEND}/api/firmware/download?type=app`, { mode: 'cors' });
         } catch (e) {
-          log("Cloud Northflank offline, falling back to static repository bundle...", 'info');
+          log("Cloud Northflank unreachable, falling back to static repository bundle...", 'info');
           res = await fetch(FALLBACK_STATIC);
         }
 
@@ -735,13 +754,9 @@
         return;
       }
 
-      let payload = g_firmwareBytes;
-      if (!payload) {
-        payload = await loadCloudFirmware();
-        if (!payload) {
-          alert("Could not load firmware binary.");
-          return;
-        }
+      if (g_selectedSource === 'local' && !g_firmwareBytes) {
+        alert("Please select a local .bin firmware file first.");
+        return;
       }
 
       try {
@@ -770,70 +785,106 @@
         const pubkeyHex = new TextDecoder().decode(pubkeyVal).replace(/\0/g, '').trim();
         log(`Read device public key: ${pubkeyHex.substring(0, 16)}...`, 'info');
 
-        const devicePubBytes = new Uint8Array(pubkeyHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+        let header = null;
+        let ciphertext = null;
 
-        // 2. Generate Client Ephemeral ECDH Keypair (P-256)
-        log("Generating client ephemeral ECDH keypair...", 'info');
-        const clientKeyPair = await crypto.subtle.generateKey(
-          { name: "ECDH", namedCurve: "P-256" },
-          true,
-          ["deriveBits"]
-        );
-        const clientPubRaw = await crypto.subtle.exportKey("raw", clientKeyPair.publicKey);
-        const clientPubBytes = new Uint8Array(clientPubRaw);
+        if (g_selectedSource === 'cloud') {
+          // Zero-Knowledge Cloud Encryption Flow:
+          // Transmit ONLY the device public key to the cloud backend.
+          // The backend executes ECDH P-256 + AES-256-CTR and returns the encrypted container.
+          // Plaintext firmware is never downloaded or accessible to the browser client.
+          actionTitle.textContent = "Negotiating cloud zero-knowledge encryption...";
+          log("Requesting encrypted payload from Northflank cloud backend...", 'info');
 
-        // 3. Import Device Key & Derive Shared Secret
-        const deviceKey = await crypto.subtle.importKey(
-          "raw",
-          devicePubBytes,
-          { name: "ECDH", namedCurve: "P-256" },
-          false,
-          []
-        );
+          let res = null;
+          try {
+            res = await fetch(`${PRIMARY_BACKEND}/api/firmware/encrypt`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ device_pubkey: pubkeyHex })
+            });
+          } catch (e) {
+            log(`Could not reach cloud encryption backend: ${e.message}`, 'error');
+            throw new Error(`Cloud encryption server unreachable: ${e.message}`);
+          }
 
-        const sharedSecretBits = await crypto.subtle.deriveBits(
-          { name: "ECDH", public: deviceKey },
-          clientKeyPair.privateKey,
-          256
-        );
+          if (!res.ok) {
+            const errJson = await res.json().catch(() => ({}));
+            throw new Error(errJson.error || `Cloud encryption failed with HTTP ${res.status}`);
+          }
 
-        // 4. Derive Session Key via SHA-256(shared_secret + "PGP_PROV_SESSION_KEY_2026")
-        const salt = new TextEncoder().encode("PGP_PROV_SESSION_KEY_2026");
-        const combined = new Uint8Array(sharedSecretBits.byteLength + salt.length);
-        combined.set(new Uint8Array(sharedSecretBits), 0);
-        combined.set(salt, sharedSecretBits.byteLength);
+          const pkgBuf = await res.arrayBuffer();
+          const pkgBytes = new Uint8Array(pkgBuf);
+          if (pkgBytes.length < 122) {
+            throw new Error("Invalid encrypted package received (less than 122 bytes)");
+          }
 
-        const sessionKeyHash = await crypto.subtle.digest("SHA-256", combined);
-        const sessionKey = await crypto.subtle.importKey(
-          "raw",
-          sessionKeyHash,
-          { name: "AES-CTR" },
-          false,
-          ["encrypt"]
-        );
+          header = pkgBytes.subarray(0, 122);
+          ciphertext = pkgBytes.subarray(122);
+          log(`Received zero-knowledge encrypted package: ${ciphertext.length.toLocaleString()} bytes. Plaintext never exposed to browser.`, 'success');
 
-        // 5. Encrypt Firmware with AES-256-CTR
-        actionTitle.textContent = "Encrypting firmware container...";
-        const iv = crypto.getRandomValues(new Uint8Array(16));
-        const ciphertextBuf = await crypto.subtle.encrypt(
-          { name: "AES-CTR", counter: iv, length: 64 },
-          sessionKey,
-          payload
-        );
-        const ciphertext = new Uint8Array(ciphertextBuf);
-        const cipherHashBuf = await crypto.subtle.digest("SHA-256", ciphertext);
-        const cipherHash = new Uint8Array(cipherHashBuf);
+        } else {
+          // Local File Fallback Flow: client-side Web Crypto
+          log("Encrypting local file via client-side Web Crypto (ECDH P-256 + AES-CTR)...", 'info');
+          const devicePubBytes = new Uint8Array(pubkeyHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
 
-        log(`Firmware encrypted: ${ciphertext.length} bytes with SHA-256 integrity hash.`, 'info');
+          const clientKeyPair = await crypto.subtle.generateKey(
+            { name: "ECDH", namedCurve: "P-256" },
+            true,
+            ["deriveBits"]
+          );
+          const clientPubRaw = await crypto.subtle.exportKey("raw", clientKeyPair.publicKey);
+          const clientPubBytes = new Uint8Array(clientPubRaw);
 
-        // 6. Assemble 122-byte PROV Header
-        const header = new Uint8Array(122);
-        header.set(new TextEncoder().encode("PROV"), 0);
-        header[4] = 0x01; // Firmware OTA type
-        header.set(clientPubBytes, 5); // 65 bytes
-        header.set(iv, 70); // 16 bytes
-        new DataView(header.buffer).setUint32(86, ciphertext.length, true); // Little-endian length
-        header.set(cipherHash, 90); // 32 bytes
+          const deviceKey = await crypto.subtle.importKey(
+            "raw",
+            devicePubBytes,
+            { name: "ECDH", namedCurve: "P-256" },
+            false,
+            []
+          );
+
+          const sharedSecretBits = await crypto.subtle.deriveBits(
+            { name: "ECDH", public: deviceKey },
+            clientKeyPair.privateKey,
+            256
+          );
+
+          const salt = new TextEncoder().encode("PGP_PROV_SESSION_KEY_2026");
+          const combined = new Uint8Array(sharedSecretBits.byteLength + salt.length);
+          combined.set(new Uint8Array(sharedSecretBits), 0);
+          combined.set(salt, sharedSecretBits.byteLength);
+
+          const sessionKeyHash = await crypto.subtle.digest("SHA-256", combined);
+          const sessionKey = await crypto.subtle.importKey(
+            "raw",
+            sessionKeyHash,
+            { name: "AES-CTR" },
+            false,
+            ["encrypt"]
+          );
+
+          actionTitle.textContent = "Encrypting local firmware container...";
+          const iv = crypto.getRandomValues(new Uint8Array(16));
+          const ciphertextBuf = await crypto.subtle.encrypt(
+            { name: "AES-CTR", counter: iv, length: 64 },
+            sessionKey,
+            g_firmwareBytes
+          );
+          ciphertext = new Uint8Array(ciphertextBuf);
+          const cipherHashBuf = await crypto.subtle.digest("SHA-256", ciphertext);
+          const cipherHash = new Uint8Array(cipherHashBuf);
+
+          header = new Uint8Array(122);
+          header.set(new TextEncoder().encode("PROV"), 0);
+          header[4] = 0x01; // Firmware OTA type
+          header.set(clientPubBytes, 5); // 65 bytes
+          header.set(iv, 70); // 16 bytes
+          new DataView(header.buffer).setUint32(86, ciphertext.length, true); // Little-endian length
+          header.set(cipherHash, 90); // 32 bytes
+
+          log(`Local firmware encrypted: ${ciphertext.length} bytes with SHA-256 integrity hash.`, 'info');
+        }
 
         // Subscribe to status notifications
         let transferCompleted = false;
@@ -970,7 +1021,7 @@
 
     // Initialize cloud firmware check on load
     window.addEventListener('DOMContentLoaded', () => {
-      loadCloudFirmware();
+      checkCloudStatus();
     });
   </script>
 </body>
