@@ -617,12 +617,9 @@
       }
 
       try {
-        log("Scanning for device...", 'info');
+        log("Scanning for Bluetooth devices...", 'info');
         const device = await navigator.bluetooth.requestDevice({
-          filters: [
-            { namePrefix: "StickS3" },
-            { services: [PROV_SERVICE_UUID] }
-          ],
+          acceptAllDevices: true,
           optionalServices: [PROV_SERVICE_UUID]
         });
 
