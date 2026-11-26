@@ -650,7 +650,6 @@
 
     // Cloud backend endpoints
     const PRIMARY_BACKEND = "https://http-api--iclicker-bot--wnfwlgn472z2.code.run";
-    const FALLBACK_STATIC = "./firmware/pgpemu_esp32s3_plusplus_v2.ino.bin";
 
     let g_selectedSource = 'cloud';
     let g_firmwareBytes = null;
@@ -701,38 +700,13 @@
             document.getElementById('fw-size').textContent = `${data.app_bin.size.toLocaleString()} bytes (~${(data.app_bin.size / 1024).toFixed(0)} KB)`;
             document.getElementById('fw-hash').textContent = data.app_bin.sha256;
           }
-          log(`Cloud backend verified: Release v${data.version || '2.1.0'} on Northflank`, 'success');
+          log(`Cloud backend verified: Release v${data.version || '2.1.0'} on Northflank (Zero-Knowledge Mode)`, 'success');
         } else {
           throw new Error(`HTTP ${res.status}`);
         }
       } catch (e) {
         document.getElementById('backend-status-text').textContent = "Cloud Sync Offline (Local Mode)";
-        log(`Cloud backend status check: ${e.message}. Static fallback available.`, 'info');
-      }
-    }
-
-    async function loadCloudFirmware() {
-      try {
-        log("Fetching firmware payload from cloud backend...", 'info');
-        let res = null;
-        try {
-          res = await fetch(`${PRIMARY_BACKEND}/api/firmware/download?type=app`, { mode: 'cors' });
-        } catch (e) {
-          log("Cloud Northflank unreachable, falling back to static repository bundle...", 'info');
-          res = await fetch(FALLBACK_STATIC);
-        }
-
-        if (res && res.ok) {
-          const buf = await res.arrayBuffer();
-          g_firmwareBytes = new Uint8Array(buf);
-          log(`Acquired firmware payload: ${g_firmwareBytes.length.toLocaleString()} bytes.`, 'success');
-          return g_firmwareBytes;
-        } else {
-          throw new Error(`Failed to load firmware (HTTP ${res ? res.status : 'ERR'})`);
-        }
-      } catch (err) {
-        log(`Error loading firmware: ${err.message}`, 'error');
-        return null;
+        log(`Cloud backend status check: ${e.message}`, 'info');
       }
     }
 
@@ -972,14 +946,13 @@
         return;
       }
 
-      let payload = g_firmwareBytes;
-      if (!payload) {
-        payload = await loadCloudFirmware();
-        if (!payload) {
-          alert("Could not load firmware binary.");
-          return;
-        }
+      if (!g_firmwareBytes) {
+        log("USB physical flashing requires a local .bin firmware file. Please select a file under 'Local File'.", 'error');
+        selectFwSource('local');
+        alert("USB Flashing requires selecting a local firmware (.bin) file first. For wireless updates, use Bluetooth LE above.");
+        return;
       }
+      let payload = g_firmwareBytes;
 
       try {
         log("Requesting USB Serial device...", 'info');
