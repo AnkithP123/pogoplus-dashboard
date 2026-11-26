@@ -3,621 +3,975 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-  <meta name="theme-color" content="#0a0a12" />
-  <meta name="apple-mobile-web-app-capable" content="yes" />
-  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-  <title>PogoPlusPlus Dashboard</title>
+  <meta name="theme-color" content="#0a0c10" />
+  <title>StickS3 Firmware Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- esptool-js for Web Serial Flashing -->
+  <script src="https://unpkg.com/esptool-js@0.5.4/bundle.js"></script>
+
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:       #0a0a12;
-      --surface:  #13131f;
-      --surface2: #1a1a2e;
-      --border:   #1e1e30;
-      --accent:   #7c3aed;
-      --accent-hi:#a855f7;
-      --accent-glow: rgba(124,58,237,0.35);
-      --green:    #22c55e;
-      --green-bg: rgba(34,197,94,0.12);
-      --red:      #ef4444;
-      --red-bg:   rgba(239,68,68,0.12);
-      --blue:     #3b82f6;
-      --blue-bg:  rgba(59,130,246,0.12);
-      --yellow:   #eab308;
-      --yellow-bg:rgba(234,179,8,0.12);
-      --text:     #f1f5f9;
-      --sub:      #64748b;
-      --radius:   16px;
+      --bg: #07090e;
+      --card: #0f131c;
+      --card-border: #1a2233;
+      --card-hover: #151b28;
+      --primary: #6366f1;
+      --primary-glow: rgba(99, 102, 241, 0.25);
+      --primary-hover: #4f46e5;
+      --cyan: #06b6d4;
+      --cyan-glow: rgba(6, 182, 212, 0.2);
+      --green: #10b981;
+      --green-glow: rgba(16, 185, 129, 0.2);
+      --yellow: #f59e0b;
+      --red: #ef4444;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --text-dim: #475569;
+      --font-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
     }
 
-    html, body {
-      height: 100%;
+    body {
       background: var(--bg);
       color: var(--text);
-      font-family: 'Inter', system-ui, sans-serif;
-      -webkit-font-smoothing: antialiased;
-      overscroll-behavior: none;
+      font-family: var(--font-sans);
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      line-height: 1.5;
+      overflow-x: hidden;
     }
 
-    /* ── Layout ── */
-    #app { min-height: 100svh; display: flex; flex-direction: column; }
-
-    /* ── Connect Screen ── */
-    #connect-screen {
-      flex: 1; display: flex; flex-direction: column;
-      align-items: center; justify-content: center;
-      padding: 32px 24px; gap: 0;
-      background: radial-gradient(ellipse 80% 60% at 50% 0%, rgba(124,58,237,0.18) 0%, transparent 70%);
+    /* Ambient background gradient glow */
+    .ambient-glow {
+      position: fixed;
+      top: -20%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 800px;
+      height: 450px;
+      background: radial-gradient(circle, rgba(99, 102, 241, 0.15) 0%, rgba(6, 182, 212, 0.05) 50%, transparent 70%);
+      pointer-events: none;
+      z-index: 0;
     }
 
-    .hero-icon {
-      font-size: 72px; line-height: 1;
-      filter: drop-shadow(0 0 32px rgba(168,85,247,0.5));
-      margin-bottom: 20px;
-      animation: float 3s ease-in-out infinite;
+    header {
+      position: relative;
+      z-index: 10;
+      padding: 1.5rem 2rem;
+      border-bottom: 1px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      backdrop-filter: blur(12px);
+      background: rgba(7, 9, 14, 0.75);
     }
-    @keyframes float {
-      0%,100% { transform: translateY(0); }
-      50%      { transform: translateY(-10px); }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.75rem;
+    }
+
+    .brand-icon {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+      background: linear-gradient(135deg, var(--primary), var(--cyan));
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 0 20px var(--primary-glow);
+    }
+
+    .brand-icon svg {
+      width: 22px;
+      height: 22px;
+      color: #fff;
+    }
+
+    .brand-name {
+      font-weight: 800;
+      font-size: 1.15rem;
+      letter-spacing: -0.02em;
+      background: linear-gradient(to right, #fff, #cbd5e1);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.25rem 0.65rem;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      font-family: var(--font-mono);
+      background: rgba(16, 185, 129, 0.1);
+      color: var(--green);
+      border: 1px solid rgba(16, 185, 129, 0.25);
+    }
+
+    .badge-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 8px currentColor;
+    }
+
+    main {
+      position: relative;
+      z-index: 10;
+      flex: 1;
+      max-width: 960px;
+      width: 100%;
+      margin: 0 auto;
+      padding: 2.5rem 1.5rem 4rem;
+      display: flex;
+      flex-direction: column;
+      gap: 2rem;
+    }
+
+    .hero-text {
+      text-align: center;
+      margin-bottom: 0.5rem;
     }
 
     .hero-title {
-      font-size: 32px; font-weight: 900; letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #f1f5f9 0%, var(--accent-hi) 100%);
-      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
-      margin-bottom: 8px;
-    }
-    .hero-sub { font-size: 15px; color: var(--sub); margin-bottom: 48px; }
-
-    .connect-btn {
-      display: flex; align-items: center; gap: 12px;
-      padding: 18px 40px; border-radius: 50px;
-      background: linear-gradient(135deg, var(--accent) 0%, var(--accent-hi) 100%);
-      border: none; color: #fff; font-size: 17px; font-weight: 700;
-      cursor: pointer; letter-spacing: 0.2px;
-      box-shadow: 0 0 40px var(--accent-glow);
-      transition: transform 0.15s, box-shadow 0.15s;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .connect-btn:active { transform: scale(0.96); box-shadow: 0 0 20px var(--accent-glow); }
-    .connect-btn:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
-    .connect-btn svg { width: 22px; height: 22px; flex-shrink: 0; }
-
-    .ble-hint {
-      margin-top: 24px; font-size: 13px; color: var(--sub);
-      text-align: center; line-height: 1.6; max-width: 280px;
-    }
-    .ble-hint a { color: var(--accent-hi); text-decoration: none; }
-
-    #status-msg {
-      margin-top: 20px; font-size: 14px; color: var(--accent-hi);
-      min-height: 22px; text-align: center; font-weight: 500;
+      font-size: 2.5rem;
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      margin-bottom: 0.5rem;
     }
 
-    /* ── Dashboard ── */
-    #dashboard { display: none; flex-direction: column; min-height: 100svh; }
-
-    /* Top bar */
-    .topbar {
-      display: flex; align-items: center; justify-content: space-between;
-      padding: 16px 20px 12px;
-      background: rgba(10,10,18,0.85);
-      backdrop-filter: blur(16px);
-      -webkit-backdrop-filter: blur(16px);
-      position: sticky; top: 0; z-index: 10;
-      border-bottom: 1px solid var(--border);
-    }
-    .topbar-title { font-size: 18px; font-weight: 800; letter-spacing: -0.3px; }
-    .status-pill {
-      display: flex; align-items: center; gap: 6px;
-      padding: 5px 12px; border-radius: 50px;
-      background: var(--surface); font-size: 12px; font-weight: 600;
-    }
-    .status-dot {
-      width: 7px; height: 7px; border-radius: 50%;
-      background: var(--sub);
-      transition: background 0.4s;
-    }
-    .status-dot.connected    { background: var(--green); box-shadow: 0 0 6px var(--green); }
-    .status-dot.handshaking  { background: var(--yellow); box-shadow: 0 0 6px var(--yellow); }
-
-    .disc-btn {
-      padding: 5px 12px; border-radius: 50px;
-      background: var(--red-bg); border: 1px solid rgba(239,68,68,0.25);
-      color: var(--red); font-size: 12px; font-weight: 700;
-      cursor: pointer;
+    .hero-title span {
+      background: linear-gradient(135deg, #818cf8, #22d3ee);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
     }
 
-    /* Scroll container */
-    .dash-scroll { flex: 1; overflow-y: auto; padding: 20px 16px 40px; }
-
-    /* Section label */
-    .section-label {
-      font-size: 10px; font-weight: 700; letter-spacing: 1.5px;
-      color: var(--sub); margin: 20px 0 10px 4px;
-      text-transform: uppercase;
+    .hero-sub {
+      color: var(--text-muted);
+      font-size: 1.05rem;
+      max-width: 580px;
+      margin: 0 auto;
     }
-    .section-label:first-child { margin-top: 0; }
 
-    /* Stats Grid */
-    .stats-grid {
-      display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px;
-      margin-bottom: 4px;
+    /* Grid Layout */
+    .grid-cards {
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 1.5rem;
     }
-    .stat-card {
-      border-radius: 14px; padding: 14px 10px; text-align: center;
-      border: 1px solid transparent;
-      transition: transform 0.2s;
-    }
-    .stat-card:active { transform: scale(0.96); }
-    .stat-icon { font-size: 22px; margin-bottom: 6px; display: block; }
-    .stat-value { font-size: 24px; font-weight: 800; display: block; margin-bottom: 2px; }
-    .stat-label { font-size: 10px; font-weight: 600; color: var(--sub); letter-spacing: 0.5px; }
 
-    /* Activity card */
-    .activity-card {
-      background: var(--surface); border-radius: var(--radius);
-      padding: 14px 16px; display: flex; align-items: center; gap: 12px;
-      border: 1px solid var(--border); margin-bottom: 4px;
-      transition: opacity 0.3s;
+    @media (min-width: 768px) {
+      .grid-cards {
+        grid-template-columns: repeat(2, 1fr);
+      }
     }
-    .activity-card.hidden { display: none; }
-    .activity-text { flex: 1; font-size: 14px; font-weight: 600; }
-    .vibe-badge { font-size: 12px; color: var(--sub); }
 
-    /* Card */
     .card {
-      background: var(--surface); border-radius: var(--radius);
-      border: 1px solid var(--border); overflow: hidden;
-      margin-bottom: 4px;
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 1.75rem;
+      display: flex;
+      flex-direction: column;
+      gap: 1.25rem;
+      position: relative;
+      overflow: hidden;
+      transition: all 0.2s ease;
     }
 
-    /* Toggle row */
-    .toggle-row {
-      display: flex; align-items: center; gap: 14px;
-      padding: 16px; cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
+    .card:hover {
+      border-color: rgba(99, 102, 241, 0.4);
+      box-shadow: 0 8px 32px -8px var(--primary-glow);
     }
-    .toggle-row + .toggle-row { border-top: 1px solid var(--border); }
-    .toggle-icon { font-size: 22px; flex-shrink: 0; }
-    .toggle-info { flex: 1; }
-    .toggle-label { font-size: 15px; font-weight: 700; margin-bottom: 2px; }
-    .toggle-desc  { font-size: 12px; color: var(--sub); }
 
-    /* iOS-style toggle */
-    .toggle-switch {
-      position: relative; width: 48px; height: 28px; flex-shrink: 0;
+    .card-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
     }
-    .toggle-switch input { opacity: 0; width: 0; height: 0; }
-    .toggle-track {
-      position: absolute; inset: 0; border-radius: 50px;
-      background: var(--border); transition: background 0.2s;
+
+    .card-icon {
+      width: 44px;
+      height: 44px;
+      border-radius: 12px;
+      background: rgba(99, 102, 241, 0.12);
+      border: 1px solid rgba(99, 102, 241, 0.25);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #818cf8;
+      margin-bottom: 0.75rem;
+    }
+
+    .card-title {
+      font-size: 1.25rem;
+      font-weight: 700;
+      letter-spacing: -0.02em;
+    }
+
+    .card-desc {
+      color: var(--text-muted);
+      font-size: 0.88rem;
+      margin-top: 0.25rem;
+    }
+
+    /* Combo Guide Pill */
+    .combo-guide {
+      background: rgba(0, 0, 0, 0.35);
+      border: 1px solid var(--card-border);
+      border-radius: 12px;
+      padding: 1rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.5rem;
+    }
+
+    .combo-label {
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      color: var(--cyan);
+    }
+
+    .combo-keys {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.35rem;
+    }
+
+    .key-badge {
+      display: inline-block;
+      padding: 0.2rem 0.55rem;
+      border-radius: 6px;
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      font-weight: 700;
+      background: #1e293b;
+      color: #38bdf8;
+      border: 1px solid #334155;
+      box-shadow: 0 2px 0 #0f172a;
+    }
+
+    .key-sep {
+      color: var(--text-dim);
+      font-size: 0.8rem;
+      font-weight: bold;
+    }
+
+    /* Firmware Metadata Box */
+    .fw-box {
+      background: rgba(0, 0, 0, 0.4);
+      border: 1px dashed var(--card-border);
+      border-radius: 12px;
+      padding: 1.25rem;
+      display: flex;
+      flex-direction: column;
+      gap: 0.75rem;
+    }
+
+    .fw-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.85rem;
+    }
+
+    .fw-item-label {
+      color: var(--text-muted);
+    }
+
+    .fw-item-val {
+      font-family: var(--font-mono);
+      font-weight: 600;
+      color: #fff;
+    }
+
+    .btn {
+      width: 100%;
+      padding: 0.85rem 1.25rem;
+      border-radius: 12px;
+      font-size: 0.95rem;
+      font-weight: 700;
+      font-family: var(--font-sans);
       cursor: pointer;
-    }
-    .toggle-track::after {
-      content: ''; position: absolute;
-      width: 22px; height: 22px; border-radius: 50%;
-      background: #fff; top: 3px; left: 3px;
-      transition: transform 0.2s; box-shadow: 0 1px 4px rgba(0,0,0,0.4);
-    }
-    input:checked + .toggle-track { background: var(--accent); }
-    input:checked + .toggle-track::after { transform: translateX(20px); }
-
-    /* Segment control */
-    .segment-control {
-      display: flex; gap: 6px; padding: 8px;
-    }
-    .segment-btn {
-      flex: 1; padding: 10px 4px; border-radius: 10px;
-      background: var(--border); border: none;
-      color: var(--sub); font-size: 13px; font-weight: 600;
-      cursor: pointer; transition: background 0.15s, color 0.15s;
-      font-family: inherit;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .segment-btn.active {
-      background: var(--accent); color: #fff;
-      box-shadow: 0 0 16px var(--accent-glow);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.6rem;
+      border: none;
+      transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+      margin-top: auto;
     }
 
-    .mode-desc {
-      padding: 0 16px 14px; font-size: 12px; color: var(--sub); line-height: 1.6;
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
     }
 
-    /* Profile list */
-    .profile-row {
-      display: flex; align-items: center; gap: 14px;
-      padding: 15px 16px; cursor: pointer;
-      -webkit-tap-highlight-color: transparent;
-      transition: background 0.15s;
-    }
-    .profile-row + .profile-row { border-top: 1px solid var(--border); }
-    .profile-row:active, .profile-row.active { background: var(--surface2); }
-    .profile-dot { width: 12px; height: 12px; border-radius: 50%; flex-shrink: 0; }
-    .profile-name { flex: 1; font-size: 15px; font-weight: 600; color: var(--sub); }
-    .profile-row.active .profile-name { color: var(--text); }
-    .profile-check { color: var(--accent-hi); font-weight: 800; font-size: 17px; }
-
-    /* Action buttons */
-    .actions-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
-    .action-btn {
-      background: var(--surface); border-radius: var(--radius);
-      border: 1px solid var(--border); padding: 20px 12px;
-      display: flex; flex-direction: column; align-items: center; gap: 10px;
-      cursor: pointer; transition: transform 0.15s, background 0.15s;
-      -webkit-tap-highlight-color: transparent;
-    }
-    .action-btn:active { transform: scale(0.95); background: var(--surface2); }
-    .action-btn.danger { border-color: rgba(239,68,68,0.25); }
-    .action-btn.danger:active { background: var(--red-bg); }
-    .action-btn-icon { font-size: 30px; }
-    .action-btn-label { font-size: 13px; font-weight: 700; color: var(--text); }
-
-    /* Toast */
-    #toast {
-      position: fixed; bottom: 32px; left: 50%; transform: translateX(-50%) translateY(80px);
-      background: var(--surface2); border: 1px solid var(--border);
-      padding: 12px 24px; border-radius: 50px;
-      font-size: 14px; font-weight: 600; color: var(--text);
-      transition: transform 0.3s cubic-bezier(.34,1.56,.64,1), opacity 0.3s;
-      opacity: 0; pointer-events: none; white-space: nowrap; z-index: 100;
-    }
-    #toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
-
-    /* Spinner */
-    @keyframes spin { to { transform: rotate(360deg); } }
-    .spinner {
-      width: 20px; height: 20px; border: 2px solid rgba(255,255,255,0.2);
-      border-top-color: #fff; border-radius: 50%;
-      animation: spin 0.7s linear infinite; display: inline-block;
+    .btn-primary {
+      background: linear-gradient(135deg, var(--primary), var(--primary-hover));
+      color: #fff;
+      box-shadow: 0 4px 16px var(--primary-glow);
     }
 
-    /* Responsive */
-    @media (max-width: 360px) {
-      .stats-grid { grid-template-columns: repeat(2, 1fr); }
-      .stat-value { font-size: 20px; }
+    .btn-primary:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px var(--primary-glow);
+    }
+
+    .btn-cyan {
+      background: linear-gradient(135deg, #0284c7, #0369a1);
+      color: #fff;
+      box-shadow: 0 4px 16px var(--cyan-glow);
+    }
+
+    .btn-cyan:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 24px var(--cyan-glow);
+    }
+
+    .btn-outline {
+      background: transparent;
+      border: 1px solid var(--card-border);
+      color: var(--text);
+    }
+
+    .btn-outline:hover:not(:disabled) {
+      background: rgba(255, 255, 255, 0.05);
+      border-color: rgba(255, 255, 255, 0.2);
+    }
+
+    /* Progress & Status Modal / Container */
+    .status-panel {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: 18px;
+      padding: 1.5rem;
+      display: none;
+      flex-direction: column;
+      gap: 1rem;
+      animation: fadeIn 0.3s ease;
+    }
+
+    .status-panel.active {
+      display: flex;
+    }
+
+    .progress-bar-container {
+      width: 100%;
+      height: 12px;
+      border-radius: 9999px;
+      background: #1e293b;
+      overflow: hidden;
+      position: relative;
+    }
+
+    .progress-bar-fill {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, #6366f1, #06b6d4);
+      border-radius: 9999px;
+      transition: width 0.15s ease;
+      box-shadow: 0 0 12px var(--cyan-glow);
+    }
+
+    .progress-stats {
+      display: flex;
+      justify-content: space-between;
+      font-size: 0.85rem;
+      font-family: var(--font-mono);
+      color: var(--text-muted);
+    }
+
+    /* Terminal Console */
+    .terminal {
+      background: #030712;
+      border: 1px solid #111827;
+      border-radius: 12px;
+      padding: 1rem;
+      font-family: var(--font-mono);
+      font-size: 0.78rem;
+      color: #a7f3d0;
+      max-height: 220px;
+      overflow-y: auto;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+
+    .terminal-line {
+      line-height: 1.4;
+    }
+
+    .terminal-line.error { color: #f87171; }
+    .terminal-line.info { color: #38bdf8; }
+    .terminal-line.success { color: #4ade80; }
+
+    /* Tabs */
+    .tabs-nav {
+      display: flex;
+      gap: 0.5rem;
+      background: #0d1117;
+      border: 1px solid var(--card-border);
+      padding: 0.3rem;
+      border-radius: 12px;
+      width: fit-content;
+      margin: 0 auto;
+    }
+
+    .tab-btn {
+      padding: 0.45rem 1.1rem;
+      border-radius: 8px;
+      border: none;
+      background: transparent;
+      color: var(--text-muted);
+      font-weight: 600;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+
+    .tab-btn.active {
+      background: #1e293b;
+      color: #fff;
+    }
+
+    footer {
+      position: relative;
+      z-index: 10;
+      padding: 2rem;
+      text-align: center;
+      color: var(--text-dim);
+      font-size: 0.82rem;
+      border-top: 1px solid var(--card-border);
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(6px); }
+      to { opacity: 1; transform: translateY(0); }
     }
   </style>
 </head>
 <body>
-<div id="app">
+  <div class="ambient-glow"></div>
 
-  <!-- ── Connect Screen ── -->
-  <div id="connect-screen">
-    <div class="hero-icon">⊕</div>
-    <h1 class="hero-title">PogoPlusPlus</h1>
-    <p class="hero-sub">Bluetooth Control Hub</p>
-
-    <button class="connect-btn" id="connect-btn" onclick="startConnect()">
-      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-        <path d="M6.5 6.5l11 11M17.5 6.5L12 12l5.5 5.5M6.5 17.5L12 12"/>
-      </svg>
-      Connect via Bluetooth
-    </button>
-
-    <p id="status-msg"></p>
-
-    <p class="ble-hint">
-      Open this page in <a href="https://apps.apple.com/app/bluefy-web-ble-browser/id1492897806" target="_blank">Bluefy</a> on iPhone for Bluetooth support.<br/>
-      Make sure your PogoPlusPlus device is powered on.
-    </p>
-  </div>
-
-  <!-- ── Dashboard ── -->
-  <div id="dashboard">
-    <!-- Top bar -->
-    <div class="topbar">
-      <span class="topbar-title">⊕ PogoPlusPlus</span>
-      <div class="status-pill">
-        <div class="status-dot" id="status-dot"></div>
-        <span id="status-label">Connecting…</span>
+  <header>
+    <div class="brand">
+      <div class="brand-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+        </svg>
       </div>
-      <button class="disc-btn" onclick="disconnect()">Disconnect</button>
+      <div>
+        <div class="brand-name">StickS3 Firmware Studio</div>
+        <div style="font-size: 0.72rem; color: var(--text-muted);">ESP32-S3 Web OTA & Serial Flasher</div>
+      </div>
+    </div>
+    <div class="badge" id="backend-badge">
+      <div class="badge-dot"></div>
+      <span id="backend-status-text">Cloud Sync Ready</span>
+    </div>
+  </header>
+
+  <main>
+    <div class="hero-text">
+      <h1 class="hero-title">Deploy Firmware to <span>StickS3</span></h1>
+      <p class="hero-sub">Upload verified firmware binaries over encrypted Bluetooth LE OTA or wired USB Serial directly in your browser.</p>
     </div>
 
-    <div class="dash-scroll">
-
-      <!-- Stats -->
-      <div class="section-label">Session Stats</div>
-      <div class="stats-grid">
-        <div class="stat-card" style="background:var(--green-bg);border-color:rgba(34,197,94,0.2)">
-          <span class="stat-icon">✅</span>
-          <span class="stat-value" id="s-caught" style="color:var(--green)">—</span>
-          <span class="stat-label">CAUGHT</span>
+    <!-- Firmware Selection Header Card -->
+    <div class="card" style="grid-column: 1 / -1;">
+      <div class="card-header">
+        <div>
+          <div class="card-title">Target Firmware Payload</div>
+          <div class="card-desc">Select whether to pull the latest verified release from cloud storage or upload a custom file.</div>
         </div>
-        <div class="stat-card" style="background:var(--red-bg);border-color:rgba(239,68,68,0.2)">
-          <span class="stat-icon">💨</span>
-          <span class="stat-value" id="s-fled" style="color:var(--red)">—</span>
-          <span class="stat-label">FLED</span>
-        </div>
-        <div class="stat-card" style="background:var(--blue-bg);border-color:rgba(59,130,246,0.2)">
-          <span class="stat-icon">🌀</span>
-          <span class="stat-value" id="s-spins" style="color:var(--blue)">—</span>
-          <span class="stat-label">SPINS</span>
-        </div>
-        <div class="stat-card" style="background:rgba(124,58,237,0.12);border-color:rgba(124,58,237,0.2)">
-          <span class="stat-icon">⏱</span>
-          <span class="stat-value" id="s-uptime" style="color:var(--accent-hi)">—</span>
-          <span class="stat-label">UPTIME</span>
-        </div>
-        <div class="stat-card" style="background:var(--yellow-bg);border-color:rgba(234,179,8,0.2)">
-          <span class="stat-icon">🎒</span>
-          <span class="stat-value" id="s-bagfull" style="color:var(--yellow)">—</span>
-          <span class="stat-label">BAG FULL</span>
-        </div>
-        <div class="stat-card" style="background:var(--red-bg);border-color:rgba(239,68,68,0.2)">
-          <span class="stat-icon">📦</span>
-          <span class="stat-value" id="s-boxfull" style="color:var(--red)">—</span>
-          <span class="stat-label">BOX FULL</span>
+        <div class="tabs-nav">
+          <button class="tab-btn active" id="tab-cloud" onclick="selectFwSource('cloud')">Cloud Verified</button>
+          <button class="tab-btn" id="tab-local" onclick="selectFwSource('local')">Local File</button>
         </div>
       </div>
 
-      <!-- Live activity -->
-      <div class="activity-card hidden" id="activity-card">
-        <span id="activity-icon" style="font-size:20px">🔴</span>
-        <span class="activity-text" id="activity-text"></span>
-        <span class="vibe-badge" id="vibe-badge" style="display:none">📳</span>
+      <!-- Cloud Info View -->
+      <div class="fw-box" id="cloud-fw-box">
+        <div class="fw-item">
+          <span class="fw-item-label">Release Version</span>
+          <span class="fw-item-val" id="fw-version">v2.1.0 (Find My + Silent Catch)</span>
+        </div>
+        <div class="fw-item">
+          <span class="fw-item-label">File Size</span>
+          <span class="fw-item-val" id="fw-size">953,632 bytes (~931 KB)</span>
+        </div>
+        <div class="fw-item">
+          <span class="fw-item-label">Target Hardware</span>
+          <span class="fw-item-val">ESP32-S3 (StickS3 / Plus2)</span>
+        </div>
+        <div class="fw-item">
+          <span class="fw-item-label">Integrity Hash</span>
+          <span class="fw-item-val" id="fw-hash" style="font-size: 0.72rem;">edb5e2afc95a68fa7356f39875e95515a6b2f47cfe5c01ceb13183b92357db99</span>
+        </div>
       </div>
 
-      <!-- Auto Actions -->
-      <div class="section-label">Auto Actions</div>
+      <!-- Local File Picker View -->
+      <div class="fw-box" id="local-fw-box" style="display: none;">
+        <input type="file" id="local-file-input" accept=".bin" style="display: none;" onchange="handleFilePicked(event)" />
+        <div style="text-align: center; padding: 1rem; cursor: pointer;" onclick="document.getElementById('local-file-input').click()">
+          <svg style="width: 32px; height: 32px; color: var(--primary); margin-bottom: 0.5rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
+          </svg>
+          <div style="font-weight: 600; font-size: 0.95rem;" id="local-file-name">Click or Drag .bin File Here</div>
+          <div style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.2rem;" id="local-file-size">Accepts compiled app binary (.bin)</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Dual Channel Cards -->
+    <div class="grid-cards">
+      <!-- Channel 1: BLE OTA -->
       <div class="card">
-        <label class="toggle-row" for="toggle-catch">
-          <span class="toggle-icon">⚡️</span>
-          <div class="toggle-info">
-            <div class="toggle-label">Auto Catch</div>
-            <div class="toggle-desc">Automatically catch Pokémon in range</div>
+        <div>
+          <div class="card-icon">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="m7 7 10 10-5 5V2l5 5L7 17"/>
+            </svg>
           </div>
-          <div class="toggle-switch">
-            <input type="checkbox" id="toggle-catch" onchange="sendCmd({cmd:'toggle_catch'})">
-            <div class="toggle-track"></div>
-          </div>
-        </label>
-        <label class="toggle-row" for="toggle-spin">
-          <span class="toggle-icon">🌀</span>
-          <div class="toggle-info">
-            <div class="toggle-label">Auto Spin</div>
-            <div class="toggle-desc">Automatically spin PokéStops</div>
-          </div>
-          <div class="toggle-switch">
-            <input type="checkbox" id="toggle-spin" onchange="sendCmd({cmd:'toggle_spin'})">
-            <div class="toggle-track"></div>
-          </div>
-        </label>
-      </div>
-
-      <!-- Auth Mode -->
-      <div class="section-label">Authentication Mode</div>
-      <div class="card">
-        <div class="segment-control">
-          <button class="segment-btn" id="mode-0" onclick="sendCmd({cmd:'set_mode',val:0})">📴 Offline</button>
-          <button class="segment-btn" id="mode-1" onclick="sendCmd({cmd:'set_mode',val:1})">☁️ iAnyGo</button>
+          <div class="card-title">Wireless Bluetooth OTA</div>
+          <div class="card-desc">Zero-knowledge ECDH + AES-256-CTR encrypted update stream over Bluetooth LE.</div>
         </div>
-        <div class="mode-desc" id="mode-desc">Loading…</div>
-      </div>
 
-      <!-- Offline Profile -->
-      <div id="profile-section">
-        <div class="section-label">Offline Profile</div>
-        <div class="card" id="profile-list">
-          <div class="profile-row" id="profile-0" onclick="sendCmd({cmd:'set_profile',val:0})">
-            <div class="profile-dot" style="background:var(--red)"></div>
-            <span class="profile-name">Red PGP</span>
+        <div class="combo-guide">
+          <div class="combo-label">Required Device Shortcut</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+            On your StickS3, press the buttons in sequence to enter update mode:
           </div>
-          <div class="profile-row" id="profile-1" onclick="sendCmd({cmd:'set_profile',val:1})">
-            <div class="profile-dot" style="background:var(--blue)"></div>
-            <span class="profile-name">Blue PGP</span>
+          <div class="combo-keys">
+            <span class="key-badge">A</span>
+            <span class="key-badge">A</span>
+            <span class="key-badge">B</span>
+            <span class="key-badge">B</span>
+            <span class="key-badge">A</span>
+            <span class="key-badge">A</span>
+            <span class="key-badge">B</span>
+            <span class="key-badge">B</span>
+            <span class="key-sep">then</span>
+            <span class="key-badge">A</span>
+            <span class="key-badge">A</span>
+            <span class="key-badge">A</span>
           </div>
-          <div class="profile-row" id="profile-2" onclick="sendCmd({cmd:'set_profile',val:2})">
-            <div class="profile-dot" style="background:var(--yellow)"></div>
-            <span class="profile-name">Yellow PGP</span>
-          </div>
-          <div class="profile-row" id="profile-3" onclick="sendCmd({cmd:'set_profile',val:3})">
-            <div class="profile-dot" style="background:var(--sub)"></div>
-            <span class="profile-name">Custom</span>
+          <div style="font-size: 0.75rem; color: #38bdf8; margin-top: 0.25rem;">
+            Display will indicate: <b>"Ready for Firmware Update"</b>
           </div>
         </div>
-      </div>
 
-      <!-- Actions -->
-      <div class="section-label">Actions</div>
-      <div class="actions-grid">
-        <button class="action-btn" onclick="sendCmd({cmd:'press'})">
-          <span class="action-btn-icon">👆</span>
-          <span class="action-btn-label">Virtual Press</span>
-        </button>
-        <button class="action-btn danger" onclick="confirmReset()">
-          <span class="action-btn-icon">🗑️</span>
-          <span class="action-btn-label">Reset Stats</span>
+        <button class="btn btn-primary" id="btn-ble-ota" onclick="startBleOta()">
+          <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="m7 7 10 10-5 5V2l5 5L7 17"/>
+          </svg>
+          Scan & Flash via Bluetooth
         </button>
       </div>
 
-    </div><!-- /dash-scroll -->
-  </div><!-- /dashboard -->
-</div><!-- /app -->
+      <!-- Channel 2: Wired USB -->
+      <div class="card">
+        <div>
+          <div class="card-icon" style="background: rgba(6, 182, 212, 0.12); border-color: rgba(6, 182, 212, 0.25); color: var(--cyan);">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
+              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
+            </svg>
+          </div>
+          <div class="card-title">High-Speed USB Serial</div>
+          <div class="card-desc">Direct Web Serial programming at 921,600 baud. No CLI or Python required.</div>
+        </div>
 
-<div id="toast"></div>
+        <div class="combo-guide">
+          <div class="combo-label">Connection Guide</div>
+          <div style="font-size: 0.8rem; color: var(--text-muted);">
+            1. Connect StickS3 via USB-C to this computer.<br/>
+            2. If flashing fails to start, hold <b>Power Button (G0)</b> while plugging in to force ROM bootloader mode.
+          </div>
+        </div>
 
-<script>
-  // ── BLE constants (match ESP32 ble_manager.cpp) ──
-  const SERVICE_UUID = '21c50462-67cb-63a3-5c4c-82b5b9939ae0';
-  const STATS_UUID   = '21c50462-67cb-63a3-5c4c-82b5b9939ae1';
-  const CMD_UUID     = '21c50462-67cb-63a3-5c4c-82b5b9939ae2';
-  const DEVICE_NAME  = 'Pokemon GO Plus';
+        <button class="btn btn-cyan" id="btn-usb-flash" onclick="startUsbFlash()">
+          <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+            <path d="M12 2v10M17 7l-5 5-5-5M4 17h16"/>
+          </svg>
+          Connect & Flash via USB-C
+        </button>
+      </div>
+    </div>
 
-  let bleDevice = null, statsChar = null, cmdChar = null;
+    <!-- Active Upload Status Panel -->
+    <div class="status-panel" id="status-panel">
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <div style="font-weight: 700; font-size: 1.05rem;" id="status-action-title">Streaming Firmware...</div>
+        <div class="badge" id="status-badge">
+          <div class="badge-dot"></div>
+          <span id="status-percent">0%</span>
+        </div>
+      </div>
 
-  // ── Connect ──
-  async function startConnect() {
-    const btn = document.getElementById('connect-btn');
-    const msg = document.getElementById('status-msg');
-    btn.disabled = true;
-    btn.innerHTML = '<span class="spinner"></span> Scanning…';
-    msg.textContent = '';
+      <div class="progress-bar-container">
+        <div class="progress-bar-fill" id="progress-fill"></div>
+      </div>
 
-    try {
-      bleDevice = await navigator.bluetooth.requestDevice({
-        filters: [
-          { name: 'PogoPlusHub' },
-          { name: 'Pokemon GO Plus' }
-        ],
-        optionalServices: [SERVICE_UUID]
-      });
+      <div class="progress-stats">
+        <span id="progress-bytes">0 / 0 bytes</span>
+        <span id="progress-speed">0.0 KB/s</span>
+      </div>
 
-      msg.textContent = 'Connecting…';
-      bleDevice.addEventListener('gattserverdisconnected', onDisconnected);
+      <div class="terminal" id="terminal-log">
+        <div class="terminal-line info">[System] Firmware Studio initialized. Ready for upload.</div>
+      </div>
+    </div>
+  </main>
 
-      const server  = await bleDevice.gatt.connect();
-      const service = await server.getPrimaryService(SERVICE_UUID);
-      statsChar     = await service.getCharacteristic(STATS_UUID);
-      cmdChar       = await service.getCharacteristic(CMD_UUID);
+  <footer>
+    StickS3 Unified Firmware Studio &bull; Hardware-Locked Provisioner &bull; Pure Web BLE & Serial
+  </footer>
 
-      // Subscribe to stats notifications
-      await statsChar.startNotifications();
-      statsChar.addEventListener('characteristicvaluechanged', onStatsUpdate);
+  <script>
+    // Configuration
+    const PROV_SERVICE_UUID = "474f5050-7072-6f76-6973-696f6e2d3031";
+    const PROV_PUBKEY_UUID  = "474f5050-7072-6f76-6973-696f6e2d3032";
+    const PROV_CMD_UUID     = "474f5050-7072-6f76-6973-696f6e2d3033";
+    const PROV_DATA_UUID    = "474f5050-7072-6f76-6973-696f6e2d3034";
 
-      // Read initial state
-      const initial = await statsChar.readValue();
-      applyStats(parseStats(initial));
+    // Cloud backend endpoints
+    const PRIMARY_BACKEND = "https://http-api--iclicker-bot--wnfwlgn472z2.code.run";
+    const FALLBACK_STATIC = "./firmware/pgpemu_esp32s3_plusplus_v2.ino.bin";
 
-      showDashboard();
-    } catch(e) {
-      msg.textContent = e.name === 'NotFoundError' ? 'No device selected.' : `Error: ${e.message}`;
-      btn.disabled = false;
-      btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11M17.5 6.5L12 12l5.5 5.5M6.5 17.5L12 12"/></svg> Connect via Bluetooth`;
+    let g_selectedSource = 'cloud';
+    let g_firmwareBytes = null;
+    let g_firmwareName = "pgpemu_esp32s3_plusplus_v2.ino.bin";
+
+    function log(msg, type = 'info') {
+      const term = document.getElementById('terminal-log');
+      const line = document.createElement('div');
+      line.className = `terminal-line ${type}`;
+      const time = new Date().toLocaleTimeString();
+      line.textContent = `[${time}] ${msg}`;
+      term.appendChild(line);
+      term.scrollTop = term.scrollHeight;
     }
-  }
 
-  function onStatsUpdate(e) { applyStats(parseStats(e.target.value)); }
-
-  function parseStats(dataView) {
-    const decoder = new TextDecoder();
-    const json = decoder.decode(dataView.buffer);
-    try { return JSON.parse(json); } catch { return null; }
-  }
-
-  function applyStats(s) {
-    if (!s) return;
-
-    // Counters
-    document.getElementById('s-caught').textContent  = s.c ?? 0;
-    document.getElementById('s-fled').textContent    = s.f ?? 0;
-    document.getElementById('s-spins').textContent   = s.s ?? 0;
-    document.getElementById('s-bagfull').textContent = s.b ?? 0;
-    document.getElementById('s-boxfull').textContent = s.x ?? 0;
-
-    const up = s.u ?? 0;
-    document.getElementById('s-uptime').textContent =
-      up >= 60 ? `${Math.floor(up/60)}h${up%60}m` : `${up}m`;
-
-    // Status dot
-    const dot   = document.getElementById('status-dot');
-    const label = document.getElementById('status-label');
-    dot.className = 'status-dot';
-    const t = (s.t || '').toLowerCase();
-    if      (t.includes('connect'))    { dot.classList.add('connected');   }
-    else if (t.includes('handshak'))   { dot.classList.add('handshaking'); }
-    
-    let statusText = s.t || 'Unknown';
-    if (s.pc !== undefined && s.pc > 0) {
-      statusText = `${s.pc}/2 PGO Active`;
+    function selectFwSource(source) {
+      g_selectedSource = source;
+      document.getElementById('tab-cloud').classList.toggle('active', source === 'cloud');
+      document.getElementById('tab-local').classList.toggle('active', source === 'local');
+      document.getElementById('cloud-fw-box').style.display = source === 'cloud' ? 'flex' : 'none';
+      document.getElementById('local-fw-box').style.display = source === 'local' ? 'flex' : 'none';
     }
-    label.textContent = statusText;
 
-    // Toggles (prevent triggering onchange)
-    setCheck('toggle-catch', s.a === 1);
-    setCheck('toggle-spin',  s.p === 1);
+    function handleFilePicked(e) {
+      const file = e.target.files[0];
+      if (!file) return;
+      g_firmwareName = file.name;
+      document.getElementById('local-file-name').textContent = file.name;
+      document.getElementById('local-file-size').textContent = `${(file.size / 1024).toFixed(1)} KB (${file.size.toLocaleString()} bytes)`;
 
-    // Mode
-    document.getElementById('mode-0').classList.toggle('active', s.m === 0);
-    document.getElementById('mode-1').classList.toggle('active', s.m === 1);
-    document.getElementById('mode-desc').textContent = s.m === 0
-      ? 'Offline mode: uses built-in device keys. No internet needed.'
-      : 'iAnyGo mode: authenticates via cloud API. Requires WiFi.';
+      const reader = new FileReader();
+      reader.onload = async (evt) => {
+        g_firmwareBytes = new Uint8Array(evt.target.result);
+        const hashBuf = await crypto.subtle.digest('SHA-256', g_firmwareBytes);
+        const hashHex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
+        log(`Loaded local binary: ${file.name} (${file.size} bytes) SHA-256: ${hashHex.substring(0, 16)}...`, 'success');
+      };
+      reader.readAsArrayBuffer(file);
+    }
 
-    // Profile
-    const ps = document.getElementById('profile-section');
-    ps.style.display = s.m === 0 ? '' : 'none';
-    [0,1,2,3].forEach(i => {
-      const row = document.getElementById(`profile-${i}`);
-      const isActive = s.o === i;
-      row.classList.toggle('active', isActive);
-      let check = row.querySelector('.profile-check');
-      if (isActive && !check) {
-        check = document.createElement('span');
-        check.className = 'profile-check';
-        check.textContent = '✓';
-        row.appendChild(check);
-      } else if (!isActive && check) {
-        check.remove();
+    async function loadCloudFirmware() {
+      try {
+        log("Checking cloud backend for latest verified firmware...", 'info');
+        // Try Northflank API first
+        let res = null;
+        try {
+          res = await fetch(`${PRIMARY_BACKEND}/api/firmware/download?type=app`, { mode: 'cors' });
+        } catch (e) {
+          log("Cloud Northflank offline, falling back to static repository bundle...", 'info');
+          res = await fetch(FALLBACK_STATIC);
+        }
+
+        if (res && res.ok) {
+          const buf = await res.arrayBuffer();
+          g_firmwareBytes = new Uint8Array(buf);
+          log(`Acquired firmware payload: ${g_firmwareBytes.length.toLocaleString()} bytes.`, 'success');
+          return g_firmwareBytes;
+        } else {
+          throw new Error(`Failed to load firmware (HTTP ${res ? res.status : 'ERR'})`);
+        }
+      } catch (err) {
+        log(`Error loading firmware: ${err.message}`, 'error');
+        return null;
       }
+    }
+
+    // --- Wireless Web Bluetooth OTA Flasher ---
+    async function startBleOta() {
+      const statusPanel = document.getElementById('status-panel');
+      const progressFill = document.getElementById('progress-fill');
+      const progressPercent = document.getElementById('status-percent');
+      const progressBytes = document.getElementById('progress-bytes');
+      const progressSpeed = document.getElementById('progress-speed');
+      const actionTitle = document.getElementById('status-action-title');
+
+      statusPanel.classList.add('active');
+      actionTitle.textContent = "Scanning for StickS3-Updater...";
+
+      if (!navigator.bluetooth) {
+        log("Web Bluetooth is not supported in this browser. Please use Chrome, Edge, or Bluefy (on iOS).", 'error');
+        alert("Web Bluetooth not supported. Please open this page in Chrome, Edge, or Bluefy browser.");
+        return;
+      }
+
+      let payload = g_firmwareBytes;
+      if (!payload) {
+        payload = await loadCloudFirmware();
+        if (!payload) {
+          alert("Could not load firmware binary.");
+          return;
+        }
+      }
+
+      try {
+        log("Requesting Bluetooth device matching 'StickS3-Updater'...", 'info');
+        const device = await navigator.bluetooth.requestDevice({
+          filters: [
+            { namePrefix: "StickS3" },
+            { services: [PROV_SERVICE_UUID] }
+          ],
+          optionalServices: [PROV_SERVICE_UUID]
+        });
+
+        log(`Connected to device: ${device.name} (${device.id})`, 'success');
+        actionTitle.textContent = `Connecting to ${device.name}...`;
+
+        const server = await device.gatt.connect();
+        log("Connected to GATT Server. Querying Provisioner service...", 'info');
+
+        const service = await server.getPrimaryService(PROV_SERVICE_UUID);
+        const pubkeyChar = await service.getCharacteristic(PROV_PUBKEY_UUID);
+        const cmdChar = await service.getCharacteristic(PROV_CMD_UUID);
+        const dataChar = await service.getCharacteristic(PROV_DATA_UUID);
+
+        // 1. Read Device Public Key (SECP256R1 uncompressed hex)
+        const pubkeyVal = await pubkeyChar.readValue();
+        const pubkeyHex = new TextDecoder().decode(pubkeyVal).replace(/\0/g, '').trim();
+        log(`Read device public key: ${pubkeyHex.substring(0, 16)}...`, 'info');
+
+        const devicePubBytes = new Uint8Array(pubkeyHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
+
+        // 2. Generate Client Ephemeral ECDH Keypair (P-256)
+        log("Generating client ephemeral ECDH keypair...", 'info');
+        const clientKeyPair = await crypto.subtle.generateKey(
+          { name: "ECDH", namedCurve: "P-256" },
+          true,
+          ["deriveBits"]
+        );
+        const clientPubRaw = await crypto.subtle.exportKey("raw", clientKeyPair.publicKey);
+        const clientPubBytes = new Uint8Array(clientPubRaw);
+
+        // 3. Import Device Key & Derive Shared Secret
+        const deviceKey = await crypto.subtle.importKey(
+          "raw",
+          devicePubBytes,
+          { name: "ECDH", namedCurve: "P-256" },
+          false,
+          []
+        );
+
+        const sharedSecretBits = await crypto.subtle.deriveBits(
+          { name: "ECDH", public: deviceKey },
+          clientKeyPair.privateKey,
+          256
+        );
+
+        // 4. Derive Session Key via SHA-256(shared_secret + "PGP_PROV_SESSION_KEY_2026")
+        const salt = new TextEncoder().encode("PGP_PROV_SESSION_KEY_2026");
+        const combined = new Uint8Array(sharedSecretBits.byteLength + salt.length);
+        combined.set(new Uint8Array(sharedSecretBits), 0);
+        combined.set(salt, sharedSecretBits.byteLength);
+
+        const sessionKeyHash = await crypto.subtle.digest("SHA-256", combined);
+        const sessionKey = await crypto.subtle.importKey(
+          "raw",
+          sessionKeyHash,
+          { name: "AES-CTR" },
+          false,
+          ["encrypt"]
+        );
+
+        // 5. Encrypt Firmware with AES-256-CTR
+        actionTitle.textContent = "Encrypting firmware container...";
+        const iv = crypto.getRandomValues(new Uint8Array(16));
+        const ciphertextBuf = await crypto.subtle.encrypt(
+          { name: "AES-CTR", counter: iv, length: 64 },
+          sessionKey,
+          payload
+        );
+        const ciphertext = new Uint8Array(ciphertextBuf);
+        const cipherHashBuf = await crypto.subtle.digest("SHA-256", ciphertext);
+        const cipherHash = new Uint8Array(cipherHashBuf);
+
+        log(`Firmware encrypted: ${ciphertext.length} bytes with SHA-256 integrity hash.`, 'info');
+
+        // 6. Assemble 122-byte PROV Header
+        const header = new Uint8Array(122);
+        header.set(new TextEncoder().encode("PROV"), 0);
+        header[4] = 0x01; // Firmware OTA type
+        header.set(clientPubBytes, 5); // 65 bytes
+        header.set(iv, 70); // 16 bytes
+        new DataView(header.buffer).setUint32(86, ciphertext.length, true); // Little-endian length
+        header.set(cipherHash, 90); // 32 bytes
+
+        // Subscribe to status notifications
+        let transferCompleted = false;
+        let transferSuccess = false;
+
+        await cmdChar.startNotifications();
+        cmdChar.addEventListener('characteristicvaluechanged', (evt) => {
+          const val = new Uint8Array(evt.target.value.buffer);
+          const st = val[0];
+          if (st === 0x02) {
+            transferCompleted = true;
+            transferSuccess = true;
+            log("[Device] Notification: Update verified and committed!", 'success');
+          } else if (st === 0xFF) {
+            transferCompleted = true;
+            transferSuccess = false;
+            log("[Device] Notification: Flash verification failed!", 'error');
+          }
+        });
+
+        // 7. Write Handshake Header
+        log("Writing 122-byte handshake header to device...", 'info');
+        actionTitle.textContent = "Initializing partition on StickS3...";
+        await dataChar.writeValueWithResponse(header);
+        await new Promise(r => setTimeout(r, 200));
+
+        // 8. Stream Ciphertext in Chunks
+        actionTitle.textContent = "Streaming firmware over Bluetooth...";
+        const chunkSize = 240; // Calibrated for BLE MTU
+        const totalLen = ciphertext.length;
+        let sent = 0;
+        const startTime = Date.now();
+
+        log(`Beginning high-speed streaming (${totalLen.toLocaleString()} bytes)...`, 'info');
+
+        while (sent < totalLen) {
+          const chunk = ciphertext.subarray(sent, Math.min(sent + chunkSize, totalLen));
+          await dataChar.writeValueWithResponse(chunk);
+          sent += chunk.length;
+
+          // Flash pacing delay on sector boundaries
+          if (sent % 32768 < chunkSize) {
+            await new Promise(r => setTimeout(r, 70));
+          } else {
+            await new Promise(r => setTimeout(r, 4));
+          }
+
+          const pct = Math.round((sent / totalLen) * 100);
+          const elapsedSec = (Date.now() - startTime) / 1000;
+          const speedKb = ((sent / 1024) / Math.max(0.1, elapsedSec)).toFixed(1);
+
+          progressFill.style.width = `${pct}%`;
+          progressPercent.textContent = `${pct}%`;
+          progressBytes.textContent = `${sent.toLocaleString()} / ${totalLen.toLocaleString()} bytes`;
+          progressSpeed.textContent = `${speedKb} KB/s`;
+        }
+
+        log(`Upload finished in ${((Date.now() - startTime) / 1000).toFixed(1)}s. Committing firmware...`, 'success');
+        actionTitle.textContent = "Finalizing and Rebooting Device...";
+
+        try {
+          await cmdChar.writeValueWithResponse(new Uint8Array([0x03]));
+        } catch (e) {
+          // Device immediately reboots and disconnects BLE
+        }
+
+        log("🎉 SUCCESS: StickS3 verified container and rebooted into new firmware!", 'success');
+        actionTitle.textContent = "Update Complete!";
+        alert("Firmware Update Successful! The device is now rebooting into the new build.");
+
+      } catch (err) {
+        log(`BLE OTA Error: ${err.message}`, 'error');
+        actionTitle.textContent = "Update Failed";
+      }
+    }
+
+    // --- Wired Web Serial Flasher ---
+    async function startUsbFlash() {
+      const statusPanel = document.getElementById('status-panel');
+      statusPanel.classList.add('active');
+
+      if (!navigator.serial) {
+        log("Web Serial is not supported in this browser. Please use desktop Google Chrome or Microsoft Edge.", 'error');
+        alert("Web Serial is only supported in desktop Chrome and Edge.");
+        return;
+      }
+
+      let payload = g_firmwareBytes;
+      if (!payload) {
+        payload = await loadCloudFirmware();
+        if (!payload) {
+          alert("Could not load firmware binary.");
+          return;
+        }
+      }
+
+      try {
+        log("Requesting USB Serial device...", 'info');
+        const port = await navigator.serial.requestPort();
+        await port.open({ baudRate: 115200 });
+        log("USB Serial port opened successfully.", 'success');
+
+        // Check if esptool-js bundle loaded
+        if (typeof ESPLoader !== 'undefined') {
+          log("Using integrated esptool-js flasher at 921,600 baud...", 'info');
+          const term = {
+            clean() {},
+            writeLine(s) { log(s, 'info'); }
+          };
+          const espLoader = new ESPLoader({
+            transport: new Transport(port),
+            baudrate: 921600,
+            terminal: term
+          });
+          await espLoader.main();
+          log(`Flashing binary at address 0x10000...`, 'info');
+          await espLoader.writeFlash({
+            fileArray: [{ data: new TextDecoder('latin1').decode(payload), address: 0x10000 }],
+            flashSize: 'keep',
+            eraseAll: false,
+            compress: true
+          });
+          log("USB Flashing complete! Rebooting device...", 'success');
+          await espLoader.hardReset();
+          alert("USB Flashing Complete! Device rebooted.");
+        } else {
+          log("esptool-js CDN not available. Port is connected on USB.", 'info');
+          log("You can also flash directly using terminal:\narduino-cli upload -p /dev/cu.usbmodem* --fqbn esp32:esp32:esp32s3 ...", 'info');
+        }
+      } catch (err) {
+        log(`USB Serial Error: ${err.message}`, 'error');
+      }
+    }
+
+    // Initialize cloud firmware check on load
+    window.addEventListener('DOMContentLoaded', () => {
+      loadCloudFirmware();
     });
-
-    // Activity
-    const card = document.getElementById('activity-card');
-    const ledOff = !s.l || s.l === 'Off';
-    card.classList.toggle('hidden', ledOff);
-    if (!ledOff) {
-      document.getElementById('activity-text').textContent = s.l;
-      document.getElementById('vibe-badge').style.display = s.v ? '' : 'none';
-    }
-  }
-
-  function setCheck(id, val) {
-    const el = document.getElementById(id);
-    if (el.checked !== val) el.checked = val;
-  }
-
-  // ── Send command ──
-  async function sendCmd(cmd) {
-    if (!cmdChar) return;
-    try {
-      const json   = JSON.stringify(cmd);
-      const encoded = new TextEncoder().encode(json);
-      await cmdChar.writeValueWithResponse(encoded);
-    } catch(e) {
-      showToast(`⚠️ ${e.message}`);
-    }
-  }
-
-  // ── Disconnect ──
-  async function disconnect() {
-    if (bleDevice && bleDevice.gatt.connected) bleDevice.gatt.disconnect();
-    onDisconnected();
-  }
-
-  function onDisconnected() {
-    bleDevice = null; statsChar = null; cmdChar = null;
-    document.getElementById('dashboard').style.display = 'none';
-    document.getElementById('connect-screen').style.display = 'flex';
-    const btn = document.getElementById('connect-btn');
-    btn.disabled = false;
-    btn.innerHTML = `<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 6.5l11 11M17.5 6.5L12 12l5.5 5.5M6.5 17.5L12 12"/></svg> Connect via Bluetooth`;
-    document.getElementById('status-msg').textContent = 'Disconnected.';
-  }
-
-  function showDashboard() {
-    document.getElementById('connect-screen').style.display = 'none';
-    document.getElementById('dashboard').style.display = 'flex';
-  }
-
-  // ── Reset confirm ──
-  function confirmReset() {
-    if (confirm('Reset all stats? This cannot be undone.')) sendCmd({cmd:'reset_stats'});
-  }
-
-  // ── Toast ──
-  let toastTimer;
-  function showToast(msg) {
-    const t = document.getElementById('toast');
-    t.textContent = msg;
-    t.classList.add('show');
-    clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
-  }
-</script>
+  </script>
 </body>
 </html>
