@@ -7,8 +7,6 @@
   <title>StickS3 Firmware Studio</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-  <!-- esptool-js for Web Serial Flashing -->
-  <script src="https://unpkg.com/esptool-js@0.5.4/bundle.js"></script>
 
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
@@ -486,59 +484,12 @@
 
   <main>
     <div class="hero-text">
-      <h1 class="hero-title">Deploy Firmware to <span>StickS3</span></h1>
-      <p class="hero-sub">Upload verified firmware binaries over encrypted Bluetooth LE OTA or wired USB Serial directly in your browser.</p>
+      <h1 class="hero-title">Update Your <span>StickS3</span></h1>
+      <p class="hero-sub">Wirelessly install software updates over Bluetooth directly from your browser.</p>
     </div>
 
-    <!-- Firmware Selection Header Card -->
-    <div class="card" style="grid-column: 1 / -1;">
-      <div class="card-header">
-        <div>
-          <div class="card-title">Target Firmware Payload</div>
-          <div class="card-desc">Select whether to pull the latest verified release from cloud storage or upload a custom file.</div>
-        </div>
-        <div class="tabs-nav">
-          <button class="tab-btn active" id="tab-cloud" onclick="selectFwSource('cloud')">Cloud Verified</button>
-          <button class="tab-btn" id="tab-local" onclick="selectFwSource('local')">Local File</button>
-        </div>
-      </div>
-
-      <!-- Cloud Info View -->
-      <div class="fw-box" id="cloud-fw-box">
-        <div class="fw-item">
-          <span class="fw-item-label">Release Version</span>
-          <span class="fw-item-val" id="fw-version">v2.1.0 (Find My + Silent Catch)</span>
-        </div>
-        <div class="fw-item">
-          <span class="fw-item-label">File Size</span>
-          <span class="fw-item-val" id="fw-size">953,632 bytes (~931 KB)</span>
-        </div>
-        <div class="fw-item">
-          <span class="fw-item-label">Target Hardware</span>
-          <span class="fw-item-val">ESP32-S3 (StickS3 / Plus2)</span>
-        </div>
-        <div class="fw-item">
-          <span class="fw-item-label">Integrity Hash</span>
-          <span class="fw-item-val" id="fw-hash" style="font-size: 0.72rem;">edb5e2afc95a68fa7356f39875e95515a6b2f47cfe5c01ceb13183b92357db99</span>
-        </div>
-      </div>
-
-      <!-- Local File Picker View -->
-      <div class="fw-box" id="local-fw-box" style="display: none;">
-        <input type="file" id="local-file-input" accept=".bin" style="display: none;" onchange="handleFilePicked(event)" />
-        <div style="text-align: center; padding: 1rem; cursor: pointer;" onclick="document.getElementById('local-file-input').click()">
-          <svg style="width: 32px; height: 32px; color: var(--primary); margin-bottom: 0.5rem;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4M17 8l-5-5-5 5M12 3v12"/>
-          </svg>
-          <div style="font-weight: 600; font-size: 0.95rem;" id="local-file-name">Click or Drag .bin File Here</div>
-          <div style="color: var(--text-muted); font-size: 0.8rem; margin-top: 0.2rem;" id="local-file-size">Accepts compiled app binary (.bin)</div>
-        </div>
-      </div>
-    </div>
-
-    <!-- Dual Channel Cards -->
-    <div class="grid-cards">
-      <!-- Channel 1: BLE OTA -->
+    <!-- Single Streamlined Bluetooth Update Card -->
+    <div style="max-width: 600px; margin: 0 auto; width: 100%;">
       <div class="card">
         <div>
           <div class="card-icon">
@@ -546,13 +497,13 @@
               <path d="m7 7 10 10-5 5V2l5 5L7 17"/>
             </svg>
           </div>
-          <div class="card-title">Wireless Bluetooth OTA</div>
-          <div class="card-desc">Zero-knowledge ECDH + AES-256-CTR encrypted update stream over Bluetooth LE.</div>
+          <div class="card-title">Wireless Bluetooth Update</div>
+          <div class="card-desc">Follow the steps below to put your device in update mode and begin.</div>
         </div>
 
         <div class="combo-guide">
-          <div class="combo-label">Required Device Shortcut</div>
-          <div style="font-size: 0.8rem; color: var(--text-muted); margin-bottom: 0.25rem;">
+          <div class="combo-label">Device Shortcut</div>
+          <div style="font-size: 0.85rem; color: var(--text-muted); margin-bottom: 0.4rem;">
             On your StickS3, press the buttons in sequence to enter update mode:
           </div>
           <div class="combo-keys">
@@ -569,45 +520,16 @@
             <span class="key-badge">A</span>
             <span class="key-badge">A</span>
           </div>
-          <div style="font-size: 0.75rem; color: #38bdf8; margin-top: 0.25rem;">
-            Display will indicate: <b>"Ready for Firmware Update"</b>
+          <div style="font-size: 0.8rem; color: #38bdf8; margin-top: 0.4rem;">
+            The screen will display: <b>"Ready for Firmware Update"</b>
           </div>
         </div>
 
-        <button class="btn btn-primary" id="btn-ble-ota" onclick="startBleOta()">
-          <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+        <button class="btn btn-primary" id="btn-ble-ota" onclick="startBleOta()" style="width: 100%; justify-content: center; padding: 0.95rem; font-size: 1.05rem;">
+          <svg style="width: 20px; height: 20px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
             <path d="m7 7 10 10-5 5V2l5 5L7 17"/>
           </svg>
-          Scan & Flash via Bluetooth
-        </button>
-      </div>
-
-      <!-- Channel 2: Wired USB -->
-      <div class="card">
-        <div>
-          <div class="card-icon" style="background: rgba(6, 182, 212, 0.12); border-color: rgba(6, 182, 212, 0.25); color: var(--cyan);">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-              <rect x="2" y="7" width="20" height="14" rx="2" ry="2"/>
-              <path d="M16 21V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v16"/>
-            </svg>
-          </div>
-          <div class="card-title">High-Speed USB Serial</div>
-          <div class="card-desc">Direct Web Serial programming at 921,600 baud. No CLI or Python required.</div>
-        </div>
-
-        <div class="combo-guide">
-          <div class="combo-label">Connection Guide</div>
-          <div style="font-size: 0.8rem; color: var(--text-muted);">
-            1. Connect StickS3 via USB-C to this computer.<br/>
-            2. If flashing fails to start, hold <b>Power Button (G0)</b> while plugging in to force ROM bootloader mode.
-          </div>
-        </div>
-
-        <button class="btn btn-cyan" id="btn-usb-flash" onclick="startUsbFlash()">
-          <svg style="width: 18px; height: 18px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-            <path d="M12 2v10M17 7l-5 5-5-5M4 17h16"/>
-          </svg>
-          Connect & Flash via USB-C
+          Connect & Update Device
         </button>
       </div>
     </div>
@@ -638,7 +560,7 @@
   </main>
 
   <footer>
-    StickS3 Unified Firmware Studio &bull; Hardware-Locked Provisioner &bull; Pure Web BLE & Serial
+    StickS3 Studio &bull; Encrypted Bluetooth Device Updater
   </footer>
 
   <script>
@@ -651,10 +573,6 @@
     // Cloud backend endpoints
     const PRIMARY_BACKEND = "https://http-api--iclicker-bot--wnfwlgn472z2.code.run";
 
-    let g_selectedSource = 'cloud';
-    let g_firmwareBytes = null;
-    let g_firmwareName = "pgpemu_esp32s3_plusplus_v2.ino.bin";
-
     function log(msg, type = 'info') {
       const term = document.getElementById('terminal-log');
       const line = document.createElement('div');
@@ -665,48 +583,18 @@
       term.scrollTop = term.scrollHeight;
     }
 
-    function selectFwSource(source) {
-      g_selectedSource = source;
-      document.getElementById('tab-cloud').classList.toggle('active', source === 'cloud');
-      document.getElementById('tab-local').classList.toggle('active', source === 'local');
-      document.getElementById('cloud-fw-box').style.display = source === 'cloud' ? 'flex' : 'none';
-      document.getElementById('local-fw-box').style.display = source === 'local' ? 'flex' : 'none';
-    }
-
-    function handleFilePicked(e) {
-      const file = e.target.files[0];
-      if (!file) return;
-      g_firmwareName = file.name;
-      document.getElementById('local-file-name').textContent = file.name;
-      document.getElementById('local-file-size').textContent = `${(file.size / 1024).toFixed(1)} KB (${file.size.toLocaleString()} bytes)`;
-
-      const reader = new FileReader();
-      reader.onload = async (evt) => {
-        g_firmwareBytes = new Uint8Array(evt.target.result);
-        const hashBuf = await crypto.subtle.digest('SHA-256', g_firmwareBytes);
-        const hashHex = Array.from(new Uint8Array(hashBuf)).map(b => b.toString(16).padStart(2, '0')).join('');
-        log(`Loaded local binary: ${file.name} (${file.size} bytes) SHA-256: ${hashHex.substring(0, 16)}...`, 'success');
-      };
-      reader.readAsArrayBuffer(file);
-    }
-
     async function checkCloudStatus() {
       try {
         const res = await fetch(`${PRIMARY_BACKEND}/api/firmware/latest`);
         if (res.ok) {
-          const data = await res.json();
-          document.getElementById('backend-status-text').textContent = `Cloud Sync Active (v${data.version || '2.1.0'})`;
-          if (data.app_bin) {
-            document.getElementById('fw-size').textContent = `${data.app_bin.size.toLocaleString()} bytes (~${(data.app_bin.size / 1024).toFixed(0)} KB)`;
-            document.getElementById('fw-hash').textContent = data.app_bin.sha256;
-          }
-          log(`Cloud backend verified: Release v${data.version || '2.1.0'} on Northflank (Zero-Knowledge Mode)`, 'success');
+          document.getElementById('backend-status-text').textContent = "Server Online";
+          log("Connected to update server.", 'info');
         } else {
           throw new Error(`HTTP ${res.status}`);
         }
       } catch (e) {
-        document.getElementById('backend-status-text').textContent = "Cloud Sync Offline (Local Mode)";
-        log(`Cloud backend status check: ${e.message}`, 'info');
+        document.getElementById('backend-status-text').textContent = "Server Offline";
+        log(`Update server status: ${e.message}`, 'info');
       }
     }
 
@@ -728,13 +616,8 @@
         return;
       }
 
-      if (g_selectedSource === 'local' && !g_firmwareBytes) {
-        alert("Please select a local .bin firmware file first.");
-        return;
-      }
-
       try {
-        log("Requesting Bluetooth device matching 'StickS3-Updater'...", 'info');
+        log("Scanning for device...", 'info');
         const device = await navigator.bluetooth.requestDevice({
           filters: [
             { namePrefix: "StickS3" },
@@ -743,11 +626,11 @@
           optionalServices: [PROV_SERVICE_UUID]
         });
 
-        log(`Connected to device: ${device.name} (${device.id})`, 'success');
+        log(`Connected to device: ${device.name}`, 'success');
         actionTitle.textContent = `Connecting to ${device.name}...`;
 
         const server = await device.gatt.connect();
-        log("Connected to GATT Server. Querying Provisioner service...", 'info');
+        log("Connected to device. Initializing updater...", 'info');
 
         const service = await server.getPrimaryService(PROV_SERVICE_UUID);
         const pubkeyChar = await service.getCharacteristic(PROV_PUBKEY_UUID);
@@ -757,108 +640,39 @@
         // 1. Read Device Public Key (SECP256R1 uncompressed hex)
         const pubkeyVal = await pubkeyChar.readValue();
         const pubkeyHex = new TextDecoder().decode(pubkeyVal).replace(/\0/g, '').trim();
-        log(`Read device public key: ${pubkeyHex.substring(0, 16)}...`, 'info');
+        log(`Device handshaking initiated...`, 'info');
 
-        let header = null;
-        let ciphertext = null;
+        actionTitle.textContent = "Preparing secure update payload...";
+        log("Contacting update server...", 'info');
 
-        if (g_selectedSource === 'cloud') {
-          // Zero-Knowledge Cloud Encryption Flow:
-          // Transmit ONLY the device public key to the cloud backend.
-          // The backend executes ECDH P-256 + AES-256-CTR and returns the encrypted container.
-          // Plaintext firmware is never downloaded or accessible to the browser client.
-          actionTitle.textContent = "Negotiating cloud zero-knowledge encryption...";
-          log("Requesting encrypted payload from Northflank cloud backend...", 'info');
-
-          let res = null;
-          try {
-            res = await fetch(`${PRIMARY_BACKEND}/api/firmware/encrypt`, {
-              method: 'POST',
-              headers: { 'Content-Type': 'application/json' },
-              body: JSON.stringify({ device_pubkey: pubkeyHex })
-            });
-          } catch (e) {
-            log(`Could not reach cloud encryption backend: ${e.message}`, 'error');
-            throw new Error(`Cloud encryption server unreachable: ${e.message}`);
-          }
-
-          if (!res.ok) {
-            const errJson = await res.json().catch(() => ({}));
-            throw new Error(errJson.error || `Cloud encryption failed with HTTP ${res.status}`);
-          }
-
-          const pkgBuf = await res.arrayBuffer();
-          const pkgBytes = new Uint8Array(pkgBuf);
-          if (pkgBytes.length < 122) {
-            throw new Error("Invalid encrypted package received (less than 122 bytes)");
-          }
-
-          header = pkgBytes.subarray(0, 122);
-          ciphertext = pkgBytes.subarray(122);
-          log(`Received zero-knowledge encrypted package: ${ciphertext.length.toLocaleString()} bytes. Plaintext never exposed to browser.`, 'success');
-
-        } else {
-          // Local File Fallback Flow: client-side Web Crypto
-          log("Encrypting local file via client-side Web Crypto (ECDH P-256 + AES-CTR)...", 'info');
-          const devicePubBytes = new Uint8Array(pubkeyHex.match(/.{1,2}/g).map(byte => parseInt(byte, 16)));
-
-          const clientKeyPair = await crypto.subtle.generateKey(
-            { name: "ECDH", namedCurve: "P-256" },
-            true,
-            ["deriveBits"]
-          );
-          const clientPubRaw = await crypto.subtle.exportKey("raw", clientKeyPair.publicKey);
-          const clientPubBytes = new Uint8Array(clientPubRaw);
-
-          const deviceKey = await crypto.subtle.importKey(
-            "raw",
-            devicePubBytes,
-            { name: "ECDH", namedCurve: "P-256" },
-            false,
-            []
-          );
-
-          const sharedSecretBits = await crypto.subtle.deriveBits(
-            { name: "ECDH", public: deviceKey },
-            clientKeyPair.privateKey,
-            256
-          );
-
-          const salt = new TextEncoder().encode("PGP_PROV_SESSION_KEY_2026");
-          const combined = new Uint8Array(sharedSecretBits.byteLength + salt.length);
-          combined.set(new Uint8Array(sharedSecretBits), 0);
-          combined.set(salt, sharedSecretBits.byteLength);
-
-          const sessionKeyHash = await crypto.subtle.digest("SHA-256", combined);
-          const sessionKey = await crypto.subtle.importKey(
-            "raw",
-            sessionKeyHash,
-            { name: "AES-CTR" },
-            false,
-            ["encrypt"]
-          );
-
-          actionTitle.textContent = "Encrypting local firmware container...";
-          const iv = crypto.getRandomValues(new Uint8Array(16));
-          const ciphertextBuf = await crypto.subtle.encrypt(
-            { name: "AES-CTR", counter: iv, length: 64 },
-            sessionKey,
-            g_firmwareBytes
-          );
-          ciphertext = new Uint8Array(ciphertextBuf);
-          const cipherHashBuf = await crypto.subtle.digest("SHA-256", ciphertext);
-          const cipherHash = new Uint8Array(cipherHashBuf);
-
-          header = new Uint8Array(122);
-          header.set(new TextEncoder().encode("PROV"), 0);
-          header[4] = 0x01; // Firmware OTA type
-          header.set(clientPubBytes, 5); // 65 bytes
-          header.set(iv, 70); // 16 bytes
-          new DataView(header.buffer).setUint32(86, ciphertext.length, true); // Little-endian length
-          header.set(cipherHash, 90); // 32 bytes
-
-          log(`Local firmware encrypted: ${ciphertext.length} bytes with SHA-256 integrity hash.`, 'info');
+        let res = null;
+        try {
+          res = await fetch(`${PRIMARY_BACKEND}/api/firmware/encrypt`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ device_pubkey: pubkeyHex })
+          });
+        } catch (e) {
+          log(`Could not reach update server: ${e.message}`, 'error');
+          throw new Error(`Update server unreachable: ${e.message}`);
         }
+
+        if (!res.ok) {
+          const errJson = await res.json().catch(() => ({}));
+          throw new Error(errJson.error || `Server update request failed (HTTP ${res.status})`);
+        }
+
+        const pkgBuf = await res.arrayBuffer();
+        const pkgBytes = new Uint8Array(pkgBuf);
+        if (pkgBytes.length < 122) {
+          throw new Error("Invalid payload received from update server");
+        }
+
+        const header = pkgBytes.subarray(0, 122);
+        const ciphertext = pkgBytes.subarray(122);
+        log(`Payload prepared (${(ciphertext.length / 1024).toFixed(0)} KB). Starting transfer...`, 'info');
+
+
 
         // Subscribe to status notifications
         let transferCompleted = false;
@@ -935,62 +749,6 @@
       }
     }
 
-    // --- Wired Web Serial Flasher ---
-    async function startUsbFlash() {
-      const statusPanel = document.getElementById('status-panel');
-      statusPanel.classList.add('active');
-
-      if (!navigator.serial) {
-        log("Web Serial is not supported in this browser. Please use desktop Google Chrome or Microsoft Edge.", 'error');
-        alert("Web Serial is only supported in desktop Chrome and Edge.");
-        return;
-      }
-
-      if (!g_firmwareBytes) {
-        log("USB physical flashing requires a local .bin firmware file. Please select a file under 'Local File'.", 'error');
-        selectFwSource('local');
-        alert("USB Flashing requires selecting a local firmware (.bin) file first. For wireless updates, use Bluetooth LE above.");
-        return;
-      }
-      let payload = g_firmwareBytes;
-
-      try {
-        log("Requesting USB Serial device...", 'info');
-        const port = await navigator.serial.requestPort();
-        await port.open({ baudRate: 115200 });
-        log("USB Serial port opened successfully.", 'success');
-
-        // Check if esptool-js bundle loaded
-        if (typeof ESPLoader !== 'undefined') {
-          log("Using integrated esptool-js flasher at 921,600 baud...", 'info');
-          const term = {
-            clean() {},
-            writeLine(s) { log(s, 'info'); }
-          };
-          const espLoader = new ESPLoader({
-            transport: new Transport(port),
-            baudrate: 921600,
-            terminal: term
-          });
-          await espLoader.main();
-          log(`Flashing binary at address 0x10000...`, 'info');
-          await espLoader.writeFlash({
-            fileArray: [{ data: new TextDecoder('latin1').decode(payload), address: 0x10000 }],
-            flashSize: 'keep',
-            eraseAll: false,
-            compress: true
-          });
-          log("USB Flashing complete! Rebooting device...", 'success');
-          await espLoader.hardReset();
-          alert("USB Flashing Complete! Device rebooted.");
-        } else {
-          log("esptool-js CDN not available. Port is connected on USB.", 'info');
-          log("You can also flash directly using terminal:\narduino-cli upload -p /dev/cu.usbmodem* --fqbn esp32:esp32:esp32s3 ...", 'info');
-        }
-      } catch (err) {
-        log(`USB Serial Error: ${err.message}`, 'error');
-      }
-    }
 
     // Initialize cloud firmware check on load
     window.addEventListener('DOMContentLoaded', () => {
