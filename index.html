@@ -747,6 +747,13 @@
             <div class="badge-dot" style="background: var(--cyan); box-shadow: 0 0 8px var(--cyan);"></div>
             <span id="log-badge-text">Buffer Ready</span>
           </div>
+        <!-- USB Port Connection Guide -->
+        <div class="combo-guide" style="background: rgba(6, 182, 212, 0.05); border-color: rgba(6, 182, 212, 0.2);">
+          <div class="combo-label" style="color: var(--cyan);">USB Port Connection Guide</div>
+          <div style="font-size: 0.85rem; color: #cbd5e1; line-height: 1.5;">
+            1. Plug your StickS3 into your computer with a USB-C cable (press the side power button once if asleep to wake the port).<br>
+            2. When the browser port selector opens, select the device named <b>"USB JTAG/serial debug unit"</b> or <b>"Espressif"</b> (on macOS: <code>usbmodem...</code>, on Windows: <code>USB Serial Device (COM...)</code>).
+          </div>
         </div>
 
         <!-- Action Buttons Bar -->
@@ -793,17 +800,13 @@
               <button class="btn btn-outline" onclick="copyLogsToClipboard()" style="padding: 0.35rem 0.65rem; font-size: 0.78rem; min-width: auto;">
                 Copy
               </button>
-              <button class="btn btn-outline" onclick="pasteRawLogsModal()" style="padding: 0.35rem 0.65rem; font-size: 0.78rem; min-width: auto;">
-                Paste
-              </button>
             </div>
           </div>
 
           <div class="log-body" id="log-body">
             <div style="color: #475569; text-align: center; padding: 3rem 1rem;">
               No device logs loaded yet.<br>
-              Connect your StickS3 via USB-C and click <b>"Pull Logs (USB Serial)"</b>,<br>
-              or click <b>"Paste"</b> to import a terminal dump from <code>dump_logs.py</code>.
+              Connect your StickS3 via USB-C and click <b>"Pull Logs (USB Serial)"</b>.
             </div>
           </div>
         </div>
@@ -1073,8 +1076,7 @@
         logBody.innerHTML = `
           <div style="color: #475569; text-align: center; padding: 3rem 1rem;">
             No device logs loaded yet.<br>
-            Connect your StickS3 via USB-C and click <b>"Pull Logs (USB Serial)"</b>,<br>
-            or click <b>"Paste"</b> to import a terminal dump from <code>dump_logs.py</code>.
+            Connect your StickS3 via USB-C and click <b>"Pull Logs (USB Serial)"</b>.
           </div>
         `;
         statsText.textContent = "0 lines (0 KB)";
@@ -1147,7 +1149,7 @@
     // --- Web Serial Pull ---
     async function pullLogsWebSerial() {
       if (!navigator.serial) {
-        alert("Web Serial is supported on desktop Google Chrome, Microsoft Edge, and Opera.\n\nIf you dumped logs via terminal (python3 dump_logs.py), click 'Paste' to view and upload them here.");
+        alert("Web Serial is supported on desktop Google Chrome, Microsoft Edge, and Opera.\n\nPlease connect your StickS3 via USB-C on a supported browser, then select 'USB JTAG/serial debug unit' or 'Espressif'.");
         return;
       }
 
@@ -1232,7 +1234,7 @@
     // --- Upload Logs to Server ---
     async function uploadLogsToCloud() {
       if (!currentRawLogs || !currentRawLogs.trim()) {
-        alert("Please pull logs from your device or paste them first.");
+        alert("Please pull logs from your device via USB first.");
         return;
       }
 
@@ -1360,7 +1362,7 @@
       }
     }
 
-    // --- Copy / Paste Utilities ---
+    // --- Copy Utilities ---
     function copyLogsToClipboard() {
       if (!currentRawLogs) return;
       navigator.clipboard.writeText(currentRawLogs).then(() => {
@@ -1368,13 +1370,6 @@
       }).catch(err => {
         alert(`Failed to copy: ${err}`);
       });
-    }
-
-    function pasteRawLogsModal() {
-      const pasted = prompt("Paste your raw device logs here:");
-      if (pasted && pasted.trim()) {
-        setLoadedLogs(pasted);
-      }
     }
 
     // Initialize cloud firmware check on load
