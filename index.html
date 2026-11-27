@@ -578,31 +578,6 @@
     .log-text.lvl-ble { color: #c084fc; }
     .log-text.lvl-ok { color: #4ade80; }
 
-    .cloud-history-box {
-      background: rgba(0,0,0,0.3);
-      border: 1px solid var(--card-border);
-      border-radius: 12px;
-      padding: 1rem;
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-    }
-
-    .cloud-log-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 0.5rem 0.75rem;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.03);
-      border: 1px solid rgba(255, 255, 255, 0.05);
-      font-size: 0.8rem;
-    }
-
-    .cloud-log-item:hover {
-      background: rgba(255, 255, 255, 0.06);
-    }
-
     footer {
       position: relative;
       z-index: 10;
@@ -808,22 +783,6 @@
               No device logs loaded yet.<br>
               Connect your StickS3 via USB-C and click <b>"Pull Logs (USB Serial)"</b>.
             </div>
-          </div>
-        </div>
-
-        <!-- Cloud Archives Section -->
-        <div class="cloud-history-box">
-          <div style="display: flex; justify-content: space-between; align-items: center;">
-            <div style="font-size: 0.85rem; font-weight: 700; color: #cbd5e1; display: flex; align-items: center; gap: 0.4rem;">
-              <svg style="width:16px;height:16px;color:var(--cyan);" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              Cloud Server Archives
-            </div>
-            <button class="btn btn-outline" onclick="fetchCloudLogList()" style="padding: 0.25rem 0.6rem; font-size: 0.75rem; min-width: auto;">
-              Refresh
-            </button>
-          </div>
-          <div id="cloud-log-list" style="display: flex; flex-direction: column; gap: 0.4rem; max-height: 180px; overflow-y: auto;">
-            <div style="font-size: 0.8rem; color: #64748b; font-style: italic;">Loading cloud logs...</div>
           </div>
         </div>
       </div>
@@ -1032,7 +991,6 @@
         btnLogs.classList.add('active');
         secOta.style.display = 'none';
         secLogs.style.display = 'flex';
-        fetchCloudLogList();
       } else {
         btnLogs.classList.remove('active');
         btnOta.classList.add('active');
@@ -1265,10 +1223,9 @@
         document.getElementById('cloud-upload-status').innerHTML = `
           <div style="color: var(--green); display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; font-weight: 600;">
             <svg style="width:16px;height:16px;" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
-            Archived to Server: <code>${data.filename}</code> (${(data.size_bytes / 1024).toFixed(1)} KB, ${data.line_count} lines)
+            ✓ Logs successfully uploaded to server (${(data.size_bytes / 1024).toFixed(1)} KB)
           </div>
         `;
-        fetchCloudLogList();
       } catch (e) {
         alert(`Failed to upload logs to server: ${e.message}`);
       } finally {
@@ -1320,45 +1277,6 @@
         if (err.name !== 'NotFoundError') {
           alert(`Error clearing logs: ${err.message}`);
         }
-      }
-    }
-
-    // --- Fetch Cloud Log History ---
-    async function fetchCloudLogList() {
-      const container = document.getElementById('cloud-log-list');
-      try {
-        const res = await fetch(`${PRIMARY_BACKEND}/api/logs`);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const data = await res.json();
-        const logs = data.logs || [];
-
-        if (logs.length === 0) {
-          container.innerHTML = `<div style="font-size: 0.8rem; color: #64748b; font-style: italic;">No cloud logs uploaded yet.</div>`;
-          return;
-        }
-
-        // Show latest 10 first
-        const reversed = logs.slice().reverse().slice(0, 10);
-        let html = "";
-        for (const item of reversed) {
-          const dateStr = item.timestamp ? new Date(item.timestamp).toLocaleString() : "Unknown";
-          const kb = (item.size_bytes / 1024).toFixed(1);
-          html += `
-            <div class="cloud-log-item">
-              <div>
-                <span style="color: #38bdf8; font-family: var(--font-mono); font-weight: 600;">${item.filename}</span>
-                <span style="color: var(--text-dim); margin-left: 0.5rem;">${dateStr}</span>
-                <span style="color: #94a3b8; margin-left: 0.5rem;">(${kb} KB • ${item.line_count} lines)</span>
-              </div>
-              <a href="${PRIMARY_BACKEND}/api/logs/download?id=${encodeURIComponent(item.id)}" target="_blank" class="btn btn-outline" style="padding: 0.2rem 0.55rem; font-size: 0.72rem; min-width: auto; text-decoration: none; display: inline-flex;">
-                Download
-              </a>
-            </div>
-          `;
-        }
-        container.innerHTML = html;
-      } catch (e) {
-        container.innerHTML = `<div style="font-size: 0.8rem; color: #ef4444;">Could not load cloud archives: ${e.message}</div>`;
       }
     }
 
