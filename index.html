@@ -713,6 +713,9 @@
       border: 1px solid #1a2233 !important;
       box-shadow: 0 10px 25px rgba(0,0,0,0.6) !important;
     }
+    #tracker-map .leaflet-tile-pane {
+      filter: invert(100%) hue-rotate(180deg) brightness(92%) contrast(92%) saturate(85%);
+    }
   </style>
 </head>
 <body>
@@ -1516,10 +1519,9 @@
     function initTrackerMap() {
       if (trackerMap) return;
       trackerMap = L.map('tracker-map', { zoomControl: true }).setView([37.3254, -122.0465], 13);
-      L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-        attribution: '&copy; OpenStreetMap &copy; CARTO',
-        subdomains: 'abcd',
-        maxZoom: 20
+      L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '&copy; OpenStreetMap contributors',
+        maxZoom: 19
       }).addTo(trackerMap);
       trackerLayerGroup = L.layerGroup().addTo(trackerMap);
     }
