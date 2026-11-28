@@ -1150,10 +1150,11 @@
 
         pullBtn.innerHTML = `Requesting Logs...`;
 
-        // Write authorized command
+        // Write authorized command with current epoch time for automatic backdating
         const writer = port.writable.getWriter();
         const encoder = new TextEncoder();
-        await writer.write(encoder.encode("DUMP:PGPP_EMU_SECURE_8921\n"));
+        const epochSec = Math.floor(Date.now() / 1000);
+        await writer.write(encoder.encode(`DUMP:PGPP_EMU_SECURE_8921:${epochSec}\n`));
         writer.releaseLock();
 
         // Read stream with inactivity timeout
